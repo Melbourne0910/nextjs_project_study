@@ -1,6 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { use } from "react";
+import { ThemeContext } from "@/context/ThemeContext";
 
 export default function Navigation() {
+  const { theme, toggleTheme } = use(ThemeContext);
+
   return (
     <header className="bg-gray-100 p-4 shadow-sm">
       <nav>
@@ -24,6 +30,13 @@ export default function Navigation() {
             <Link href="/checkout">Checkout</Link>
           </li>
         </ul>
+
+        <button
+          onClick={toggleTheme}
+          className="cursor-pointer rounded bg-gray-100 px-3 py-2 text-gray-900 transition hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-100 dark:hover:bg-slate-600"
+        >
+          {theme === "light" ? "🌙" : "☀️"}
+        </button>
       </nav>
     </header>
   );
