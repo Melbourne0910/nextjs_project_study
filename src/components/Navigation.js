@@ -20,6 +20,9 @@ export default function Navigation() {
           <li>
             <Link href="/courses">Courses</Link>
           </li>
+          <li>
+            <Link href="/checkout">Checkout</Link>
+          </li>
         </ul>
       </nav>
     </header>
