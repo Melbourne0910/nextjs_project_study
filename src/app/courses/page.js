@@ -1,10 +1,16 @@
+import { headers } from "next/headers";
+
 export const metadata = {
   title: "Courses",
   description: "Browse all available courses.",
 };
 
 async function getCourses() {
-  const res = await fetch("https://example.com/api/courses", {
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+
+  const res = await fetch(`${protocol}://${host}/api/courses`, {
     next: {
       revalidate: 60,
     },
