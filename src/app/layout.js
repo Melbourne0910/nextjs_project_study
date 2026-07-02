@@ -2,6 +2,7 @@ import "./globals.css";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ThemeProvider from "@/context/ThemeContext";
+import ToasterClient from "@/components/ToasterClient";
 
 export const metadata = {
   title: "Next.js Project",
@@ -20,6 +21,7 @@ export default function RootLayout({ children }) {
           </main>
 
           <Footer />
+          <ToasterClient />
         </ThemeProvider>
       </body>
     </html>
