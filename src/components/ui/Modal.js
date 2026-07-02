@@ -3,16 +3,18 @@
 import { useState } from "react";
 
 export default function Modal({ children }) {
-    const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(true);
 
-    if (!open) return null;
+  if (!open) {
+    return null;
+  }
 
-    return (
+  return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="relative rounded-lg bg-white p-6 shadow-lg">
+      <div className="relative rounded-lg bg-white p-6 text-gray-900 shadow-lg dark:bg-slate-800 dark:text-gray-100">
         <button
           onClick={() => setOpen(false)}
-          className="absolute right-3 top-3 text-xl"
+          className="absolute right-3 top-3 cursor-pointer text-xl"
           aria-label="Close modal"
         >
           &times;
