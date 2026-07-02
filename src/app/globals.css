@@ -19,6 +19,11 @@
   --foreground: #ededed;
 }
 
+[class*="dark"] {
+  transition-property: background-color, color, border-color;
+  transition-duration: 200ms;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
