@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { use } from "react";
+import { useContext } from "react";
 import { ThemeContext } from "@/context/ThemeContext";
 
 export default function Navigation() {
-  const { theme, toggleTheme } = use(ThemeContext);
+  const { theme, toggleTheme } = useContext(ThemeContext);
 
   return (
-    <header className="bg-gray-100 p-4 shadow-sm">
+    <header className="bg-gray-100 p-4 shadow-sm dark:bg-slate-800">
       <nav>
         <ul className="flex gap-4 list-none p-0 m-0">
           <li>
