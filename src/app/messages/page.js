@@ -4,9 +4,9 @@ import { useState } from "react";
 
 export default function MessagesPage() {
   const [newMsg, setNewMsg] = useState("");
-  const loading = false;
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!newMsg.trim()) return;
@@ -26,15 +26,13 @@ export default function MessagesPage() {
 
       if(data.success) {
         setNewMsg("");
-        fetchMessages();
       } else {
         alert("Failed to save message.");
       }
     } catch (error) {
-        console.error("Failed to submit message:", error);
-      } finally {
-        setLoading(false);
-      }
+      console.error("Failed to submit message:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
