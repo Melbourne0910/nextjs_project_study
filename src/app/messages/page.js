@@ -8,6 +8,34 @@ export default function MessagesPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!newMsg.trim()) return;
+
+    setLoading(true);
+    
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ test: newMsg }),
+      });
+
+      const data = await res.json();
+
+      if(data.success) {
+        setNewMsg("");
+        fetchMessages();
+      } else {
+        alert("Failed to save message.");
+      }
+    } catch (error) {
+        console.error("Failed to submit message:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   return (
