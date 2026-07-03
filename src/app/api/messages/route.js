@@ -1,55 +1,52 @@
-import fs from "fs/promises";
-import path from "path";
+import db from "@/lib/db";
 
-const filePath = path.join(process.cwd(), "src/data/messages.json");
+export async function GET() {
+  try {
+    const messages = db
+      .prepare("SELECT id, text, createdAt FROM messages ORDER BY id ASC")
+      .all();
 
-export async function GET(){
-    try {
-        const fileData = await fs.readFile(filePath, "utf-8");
-        const messages = JSON.parse(fileData);
+    return Response.json(messages);
+  } catch (error) {
+    console.error("Failed to fetch messages:", error);
 
-        return Response.json(messages);
-    } catch (error) {
-        console.error("Failed to read messages:", error);
-        return Response.json(
-            { error: "Failed to read messages"},
-            {status: 500}
-        )
-    }
+    return Response.json(
+      { error: "Failed to fetch messages" },
+      { status: 500 }
+    );
+  }
 }
-export async function POST(request){
-    try {
-        const newMessage = await request.json();
 
-        if (!newMessage.text?.trim()) {
-            return Response.json(
-                { error: "Message text is required" },
-                { status: 400 }
-            );
-        }
-        
-        const fileData = await fs.readFile(filePath, "utf-8");
-        const messages = JSON.parse(fileData);
+export async function POST(request) {
+  try {
+    const { text } = await request.json();
 
-        const message = {
-            id: messages.length > 0 ? messages[messages.length - 1].id + 1 : 1,
-            text: newMessage.text.trim(),
-        };
-        messages.push(message);
-
-        await fs.writeFile(filePath, JSON.stringify(messages, null, 2));
-        
-        return Response.json({
-            success: true,
-            message: "Message added successfully",
-            data: message,
-        });
-    } catch (error) {
-        console.error("Failed to add message:", error);
-        return Response.json(
-            {error: "Failed to add message"},
-            {status: 500}
-        );
+    if (!text?.trim()) {
+      return Response.json(
+        { success: false, error: "Message text is required" },
+        { status: 400 }
+      );
     }
 
+    const result = db
+      .prepare("INSERT INTO messages (text) VALUES (?)")
+      .run(text.trim());
+
+    const message = db
+      .prepare("SELECT * FROM messages WHERE id = ?")
+      .get(result.lastInsertRowid);
+
+    return Response.json({
+      success: true,
+      message: "Message saved successfully",
+      data: message,
+    });
+  } catch (error) {
+    console.error("Failed to save message:", error);
+
+    return Response.json(
+      { success: false, error: "Failed to save message" },
+      { status: 500 }
+    );
+  }
 }

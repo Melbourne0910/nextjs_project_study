@@ -7,17 +7,17 @@ export default function MessagesPage() {
   const [newMsg, setNewMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fetchMessages = async () => {
-    try {
-      const res = await fetch("/api/messages");
-      const data = await res.json();
-      setMessages(data);
-    } catch (error) {
-      console.error("Failed to fetch messages:", error);
-    }
-  };
-
   useEffect(() => {
+    async function fetchMessages() {
+      try {
+        const res = await fetch("/api/messages", { cache: "no-store" });
+        const data = await res.json();
+        setMessages(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      }
+    }
+
     fetchMessages();
   }, []);
 
@@ -40,8 +40,8 @@ export default function MessagesPage() {
       const data = await res.json();
 
       if (data.success) {
+        setMessages((prev) => [...prev, data.data]);
         setNewMsg("");
-        fetchMessages();
       } else {
         alert("Failed to save message.");
       }
