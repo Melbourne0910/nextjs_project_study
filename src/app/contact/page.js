@@ -9,7 +9,7 @@ export default function ContactPage() {
   function handleSubmit(e) {
     e.preventDefault();
 
-    toast.success("Message sent successfully!");
+    toast.success("信息发送成功");
   }
 
   return (
