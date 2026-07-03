@@ -29,6 +29,9 @@ export default function Navigation() {
           <li>
             <Link href="/checkout">Checkout</Link>
           </li>
+          <li>
+            <Link href="/messages">Messages</Link>
+          </li>
         </ul>
 
         <button
