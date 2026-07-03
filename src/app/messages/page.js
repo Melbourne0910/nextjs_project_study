@@ -7,23 +7,18 @@ export default function MessagesPage() {
   const [newMsg, setNewMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const getMessages = async () => {
-    const res = await fetch("/api/messages");
-
-    return res.json();
+  const fetchMessages = async () => {
+    try {
+      const res = await fetch("/api/messages");
+      const data = await res.json();
+      setMessages(data);
+    } catch (error) {
+      console.error("Failed to fetch messages:", error);
+    }
   };
 
   useEffect(() => {
-    async function loadMessages() {
-      try {
-        const data = await getMessages();
-        setMessages(data);
-      } catch (error) {
-        console.error("Failed to fetch messages:", error);
-      }
-    }
-
-    loadMessages();
+    fetchMessages();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -32,7 +27,7 @@ export default function MessagesPage() {
     if (!newMsg.trim()) return;
 
     setLoading(true);
-    
+
     try {
       const res = await fetch("/api/messages", {
         method: "POST",
@@ -46,8 +41,7 @@ export default function MessagesPage() {
 
       if (data.success) {
         setNewMsg("");
-        const updatedMessages = await getMessages();
-        setMessages(updatedMessages);
+        fetchMessages();
       } else {
         alert("Failed to save message.");
       }
@@ -59,8 +53,19 @@ export default function MessagesPage() {
   };
 
   return (
-    <section className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-3xl font-bold">Messages</h1>
+    <div className="max-w-2xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">💬 Messages</h1>
+
+      <ul className="space-y-2 mb-6">
+        {messages.map((msg) => (
+          <li
+            key={msg.id}
+            className="p-3 border rounded bg-white dark:bg-gray-800"
+          >
+            {msg.text}
+          </li>
+        ))}
+      </ul>
 
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
@@ -81,6 +86,6 @@ export default function MessagesPage() {
           {loading ? "Sending..." : "Send"}
         </button>
       </form>
-    </section>
+    </div>
   );
 }
