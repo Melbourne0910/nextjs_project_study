@@ -1,10 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function MessagesPage() {
+  const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const getMessages = async () => {
+    const res = await fetch("/api/messages");
+
+    return res.json();
+  };
+
+  useEffect(() => {
+    async function loadMessages() {
+      try {
+        const data = await getMessages();
+        setMessages(data);
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      }
+    }
+
+    loadMessages();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,13 +39,15 @@ export default function MessagesPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ test: newMsg }),
+        body: JSON.stringify({ text: newMsg }),
       });
 
       const data = await res.json();
 
-      if(data.success) {
+      if (data.success) {
         setNewMsg("");
+        const updatedMessages = await getMessages();
+        setMessages(updatedMessages);
       } else {
         alert("Failed to save message.");
       }
