@@ -1,10 +1,19 @@
-import db from "@/lib/db";
+import db from "@/lib/db-setup";
 import { broadcastMessage } from "./stream/route";
 
 export async function GET() {
   try {
     const messages = db
-      .prepare("SELECT id, text, createdAt FROM messages ORDER BY id ASC")
+      .prepare(`
+        SELECT
+          messages.id,
+          messages.text,
+          messages.createdAt,
+          users.name AS username
+        FROM messages
+        JOIN users ON messages.userId = users.id
+        ORDER BY messages.id ASC
+      `)
       .all();
 
     return Response.json(messages);
@@ -29,12 +38,36 @@ export async function POST(request) {
       );
     }
 
+    const userIds = db
+      .prepare("SELECT id FROM users")
+      .all()
+      .map((user) => user.id);
+
+    if (userIds.length === 0) {
+      return Response.json(
+        { success: false, error: "No users available" },
+        { status: 500 }
+      );
+    }
+
+    const randomUserId =
+      userIds[Math.floor(Math.random() * userIds.length)];
+
     const result = db
-      .prepare("INSERT INTO messages (text) VALUES (?)")
-      .run(text.trim());
+      .prepare("INSERT INTO messages (userId, text) VALUES (?, ?)")
+      .run(randomUserId, text.trim());
 
     const message = db
-      .prepare("SELECT * FROM messages WHERE id = ?")
+      .prepare(`
+        SELECT
+          m.id,
+          m.text,
+          m.createdAt,
+          u.name AS username
+        FROM messages m
+        LEFT JOIN users u ON m.userId = u.id
+        WHERE m.id = ?
+      `)
       .get(result.lastInsertRowid);
 
     broadcastMessage(message);
