@@ -21,22 +21,22 @@ db.exec(`
   );
 `);
 
-const { count: userCount } = db.prepare("SELECT COUNT(*) as count FROM users").get();
-
-if (userCount === 0) {
-  const insertUser = db.prepare("INSERT INTO users (name, email) VALUES (?, ?)");
-
-  const seedUsers = db.transaction((users) => {
-    users.forEach((user) => {
-      insertUser.run(user.name, user.email);
-    });
-  });
-
-  seedUsers([
-    { name: "Alice", email: "alice@example.com" },
-    { name: "Bob", email: "bob@example.com" },
-    { name: "Charlie", email: "charlie@example.com" },
-  ]);
-}
+// const { count: userCount } = db.prepare("SELECT COUNT(*) as count FROM users").get();
+//
+// if (userCount === 0) {
+//   const insertUser = db.prepare("INSERT INTO users (name, email) VALUES (?, ?)");
+//
+//   const seedUsers = db.transaction((users) => {
+//     users.forEach((user) => {
+//       insertUser.run(user.name, user.email);
+//     });
+//   });
+//
+//   seedUsers([
+//     { name: "Alice", email: "alice@example.com" },
+//     { name: "Bob", email: "bob@example.com" },
+//     { name: "Charlie", email: "charlie@example.com" },
+//   ]);
+// }
 
 export default db;
