@@ -1,4 +1,7 @@
-let clients = [];
+export const dynamic = "force-dynamic";
+
+const clients = globalThis.__messageClients ?? new Set();
+globalThis.__messageClients = clients;
 
 function encode(str) {
     return new TextEncoder().encode(str);
@@ -10,14 +13,14 @@ export async function GET(){
     const stream = new ReadableStream({
         start(controller) {
             client = controller;
-            clients.push(client);
+            clients.add(client);
 
             controller.enqueue(
                 encode(`data: ${JSON.stringify({ type: "connected" })}\n\n`)
             );
         },
         cancel() {
-            clients = clients.filter((c) => c !== client);
+            clients.delete(client);
         },
     })
 
@@ -38,6 +41,7 @@ export function broadcastMessage(message) {
             client.enqueue(encode(data));
         } catch (error) {
             console.error("Failed to send message to client:", error);
+            clients.delete(client);
         }
     }
 }
