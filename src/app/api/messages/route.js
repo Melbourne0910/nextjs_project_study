@@ -1,4 +1,5 @@
 import db from "@/lib/db";
+import { broadcastMessage } from "./stream/route";
 
 export async function GET() {
   try {
@@ -35,6 +36,8 @@ export async function POST(request) {
     const message = db
       .prepare("SELECT * FROM messages WHERE id = ?")
       .get(result.lastInsertRowid);
+
+    broadcastMessage(message);
 
     return Response.json({
       success: true,

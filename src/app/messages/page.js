@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function MessagesPage() {
   const [messages, setMessages] = useState([]);
@@ -19,6 +20,30 @@ export default function MessagesPage() {
     }
 
     fetchMessages();
+  }, []);
+
+  useEffect(() => {
+    const eventSource = new EventSource("/api/messages/stream");
+
+    eventSource.onmessage = (event) => {
+      const newMessage = JSON.parse(event.data);
+
+      if (newMessage.type === "connected") {
+        toast.success("Realtime connection established");
+      } else {
+        setMessages((prev) => {
+          if (prev.some((message) => message.id === newMessage.id)) {
+            return prev;
+          }
+
+          return [...prev, newMessage];
+        });
+      }
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, []);
 
   const handleSubmit = async (e) => {
@@ -40,7 +65,6 @@ export default function MessagesPage() {
       const data = await res.json();
 
       if (data.success) {
-        setMessages((prev) => [...prev, data.data]);
         setNewMsg("");
       } else {
         alert("Failed to save message.");
