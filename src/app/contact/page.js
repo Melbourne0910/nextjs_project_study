@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
+import { sendContactMessage } from "./actions";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -33,17 +34,24 @@ export default function ContactPage() {
 
   async function onSubmit(data) {
     try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("email", data.email);
+      formData.append("message", data.message);
 
-      const result = await res.json();
+      // const res = await fetch("/api/contact", {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify(data),
+      // });
+      //
+      // const result = await res.json();
 
-      if (!res.ok || !result.success) {
+      const result = await sendContactMessage(formData);
+
+      if (!result.success) {
         toast.error(result.message || "Failed to send message");
         return;
       }
