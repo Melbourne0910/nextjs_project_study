@@ -4,6 +4,13 @@ import CourseList from "@/components/CourseList";
 export const metadata = {
   title: "Courses | Agora",
   description: "Explore high-quality online courses on Agora.",
+  keywords: [
+    "online courses",
+    "React",
+    "Next.js",
+    "web development",
+    "Agora",
+  ],
   openGraph: {
     title: "Courses | Agora",
     description: "Explore high-quality online courses and improve your skills.",
@@ -19,6 +26,12 @@ export const metadata = {
         alt: "Agora courses preview image",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Courses | Agora",
+    description: "Explore online courses and improve your skills with Agora.",
+    images: ["https://example.com/twitter-image.jpg"],
   },
 };
 
