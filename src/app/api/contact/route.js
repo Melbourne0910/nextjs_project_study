@@ -23,7 +23,7 @@ export async function POST(req) {
     `;
 
     const success = await sendEmail({
-      to: "your-email@example.com",
+      to: process.env.CONTACT_EMAIL || "delivered@resend.dev",
       subject: `New message from ${name}`,
       html,
     });
