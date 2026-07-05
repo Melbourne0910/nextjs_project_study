@@ -30,7 +30,7 @@ export default function Navigation() {
             <Link href="/checkout">Checkout</Link>
           </li>
           <li>
-            <Link href="/messages">Messages</Link>
+            <Link href="/chat">Chat</Link>
           </li>
         </ul>
 

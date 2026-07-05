@@ -2,8 +2,24 @@ import { headers } from "next/headers";
 import CourseList from "@/components/CourseList";
 
 export const metadata = {
-  title: "Courses",
-  description: "Browse all available courses.",
+  title: "Courses | Agora",
+  description: "Explore high-quality online courses on Agora.",
+  openGraph: {
+    title: "Courses | Agora",
+    description: "Explore high-quality online courses and improve your skills.",
+    url: "https://example.com/courses",
+    siteName: "Agora",
+    type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: "https://example.com/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Agora courses preview image",
+      },
+    ],
+  },
 };
 
 async function getCourses() {
