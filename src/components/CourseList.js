@@ -1,17 +1,19 @@
-"use client";
+import CourseCard from "@/components/CourseCard";
 
 export default function CourseList({ courses }) {
+  if (courses.length === 0) {
+    return (
+      <p className="rounded-lg border border-dashed border-gray-300 p-6 text-sm text-gray-600 dark:border-slate-700 dark:text-gray-300">
+        No courses available yet.
+      </p>
+    );
+  }
+
   return (
-    <ul className="space-y-4">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {courses.map((course) => (
-        <li
-          key={course.id}
-          className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
-        >
-          <h2 className="text-xl font-semibold">{course.title}</h2>
-          <p>{course.description}</p>
-        </li>
+        <CourseCard key={course.id} course={course} />
       ))}
-    </ul>
+    </div>
   );
 }

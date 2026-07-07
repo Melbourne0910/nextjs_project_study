@@ -1,5 +1,5 @@
-import { headers } from "next/headers";
 import CourseList from "@/components/CourseList";
+import db from "@/lib/db-setup";
 
 export const metadata = {
   title: "Courses | Agora",
@@ -36,28 +36,21 @@ export const metadata = {
 };
 
 async function getCourses() {
-  const headersList = await headers();
-  const host = headersList.get("host");
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  try {
+    const courses = db.prepare("SELECT * FROM courses ORDER BY id ASC").all();
 
-  const res = await fetch(`${protocol}://${host}/api/courses`, {
-    next: {
-      revalidate: 60,
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch courses");
+    return courses;
+  } catch (error) {
+    console.error("Failed to fetch courses:", error);
+    return [];
   }
-
-  return res.json();
 }
 
 export default async function CoursesPage() {
   const courses = await getCourses();
 
   return (
-    <section className="max-w-3xl mx-auto p-6">
+    <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <h1 className="text-3xl font-bold mb-6">Available Courses</h1>
 
       <CourseList courses={courses} />

@@ -12,6 +12,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@react-email/render": "^2.0.10",
     "better-sqlite3": "^12.11.1",
+    "lucide-react": "^1.23.0",
     "next": "16.0.11",
     "react": "19.2.1",
     "react-dom": "19.2.1",
