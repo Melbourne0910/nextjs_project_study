@@ -1,0 +1,32 @@
+export const users = [
+  {
+    name: "Alice",
+    email: "alice@example.com",
+    password: "password123",
+    email_verified: 1,
+    verification_token: null,
+    is_admin: 1,
+    password_reset_token: null,
+    password_reset_expires: null,
+  },
+  {
+    name: "Bob",
+    email: "bob@example.com",
+    password: "password123",
+    email_verified: 1,
+    verification_token: null,
+    is_admin: 0,
+    password_reset_token: null,
+    password_reset_expires: null,
+  },
+  {
+    name: "Charlie",
+    email: "charlie@example.com",
+    password: "password123",
+    email_verified: 0,
+    verification_token: "sample-token",
+    is_admin: 0,
+    password_reset_token: null,
+    password_reset_expires: null,
+  },
+];

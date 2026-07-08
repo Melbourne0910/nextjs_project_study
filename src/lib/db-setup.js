@@ -1,45 +1,25 @@
 import Database from "better-sqlite3";
+import fs from "fs";
 import path from "path";
 import { courses } from "@/data/courses";
+import { users } from "@/data/users";
 
 const dbPath = path.join(process.cwd(), "src/data/app.db");
+const loadSQL = (relativePath) => {
+  return fs.readFileSync(
+    path.join(process.cwd(), "src/data/db", relativePath),
+    "utf8"
+  );
+};
 
 const db = new Database(dbPath);
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL
-  );
+// const dropTablesSQL = loadSQL("schema/drop-tables.sql");
+const createTablesSQL = loadSQL("schema/create-tables.sql");
+const insertUserSQL = loadSQL("seed/insert-users.sql");
 
-  CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    userId INTEGER NOT NULL,
-    text TEXT NOT NULL,
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (userId) REFERENCES users(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS courses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    course_slug TEXT UNIQUE NOT NULL,
-    subtitle TEXT,
-    description TEXT,
-    image TEXT,
-    original_price TEXT,
-    current_price TEXT,
-    rating TEXT,
-    reviews TEXT,
-    level TEXT,
-    duration TEXT,
-    lessons TEXT,
-    instructor TEXT,
-    is_paid BOOLEAN DEFAULT 0,
-    is_bestseller BOOLEAN DEFAULT 0
-  );
-`);
+// db.exec(dropTablesSQL);
+db.exec(createTablesSQL);
 
 const courseCount = db
   .prepare("SELECT COUNT(*) as count FROM courses")
@@ -94,22 +74,31 @@ if (courseCount === 0) {
   console.log("Courses seeded successfully");
 }
 
-// const { count: userCount } = db.prepare("SELECT COUNT(*) as count FROM users").get();
-//
-// if (userCount === 0) {
-//   const insertUser = db.prepare("INSERT INTO users (name, email) VALUES (?, ?)");
-//
-//   const seedUsers = db.transaction((users) => {
-//     users.forEach((user) => {
-//       insertUser.run(user.name, user.email);
-//     });
-//   });
-//
-//   seedUsers([
-//     { name: "Alice", email: "alice@example.com" },
-//     { name: "Bob", email: "bob@example.com" },
-//     { name: "Charlie", email: "charlie@example.com" },
-//   ]);
-// }
+const { count: userCount } = db
+  .prepare("SELECT COUNT(*) as count FROM users")
+  .get();
+
+if (userCount === 0) {
+  const insertUser = db.prepare(insertUserSQL);
+
+  const seedUsers = db.transaction((userList) => {
+    for (const user of userList) {
+      insertUser.run(
+        user.name,
+        user.email,
+        user.password,
+        user.email_verified,
+        user.verification_token,
+        user.is_admin,
+        user.password_reset_token,
+        user.password_reset_expires
+      );
+    }
+  });
+
+  seedUsers(users);
+
+  console.log("Users seeded successfully");
+}
 
 export default db;
