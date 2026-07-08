@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
@@ -83,10 +84,12 @@ if (userCount === 0) {
 
   const seedUsers = db.transaction((userList) => {
     for (const user of userList) {
+      const hashedPassword = bcrypt.hashSync(user.password, 10);
+
       insertUser.run(
         user.name,
         user.email,
-        user.password,
+        hashedPassword,
         user.email_verified,
         user.verification_token,
         user.is_admin,
