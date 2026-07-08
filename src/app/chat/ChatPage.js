@@ -1,14 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
-export default function MessagesPage() {
+export default function ChatPage() {
+  const { status } = useSession();
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (status !== "authenticated") {
+      return;
+    }
+
     async function fetchMessages() {
       try {
         const res = await fetch("/api/messages", { cache: "no-store" });
@@ -20,9 +26,13 @@ export default function MessagesPage() {
     }
 
     fetchMessages();
-  }, []);
+  }, [status]);
 
   useEffect(() => {
+    if (status !== "authenticated") {
+      return;
+    }
+
     const eventSource = new EventSource("/api/messages/stream");
 
     eventSource.onmessage = (event) => {
@@ -44,7 +54,7 @@ export default function MessagesPage() {
     return () => {
       eventSource.close();
     };
-  }, []);
+  }, [status]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,6 +85,32 @@ export default function MessagesPage() {
       setLoading(false);
     }
   };
+
+  if (status === "loading") {
+    return (
+      <p className="p-6 text-center">
+        Loading session...
+      </p>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="mx-auto mt-20 max-w-md text-center">
+        <p className="mb-4 text-lg">
+          You must be logged in to view messages.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => signIn()}
+          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        >
+          Login
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-6">
