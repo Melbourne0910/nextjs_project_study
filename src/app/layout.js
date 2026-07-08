@@ -3,6 +3,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ThemeProvider from "@/context/ThemeContext";
 import ToasterClient from "@/components/ToasterClient";
+import AuthProvider from "@/components/AuthProvider";
 
 export const metadata = {
   title: "Next.js Project",
@@ -14,14 +15,16 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-gray-100 min-h-screen flex flex-col">
         <ThemeProvider>
-          <Navigation />
+          <AuthProvider>
+            <Navigation />
 
-          <main className="flex-grow p-4">
-            {children}
-          </main>
+            <main className="flex-grow p-4">
+              {children}
+            </main>
 
-          <Footer />
-          <ToasterClient />
+            <Footer />
+            <ToasterClient />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Moon, Sun, X } from "lucide-react";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import clsx from "clsx";
-import { ThemeContext } from "@/context/ThemeContext";
+import ThemeToggleButton from "./ThemeToggleButton";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -20,84 +20,84 @@ const navItems = [
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const { theme, toggleTheme } = useContext(ThemeContext);
+  const { data: session } = useSession();
 
-  const activeHref = navItems.reduce((currentHref, item) => {
-    const matches =
-      item.href === "/"
-        ? pathname === item.href
-        : pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const isActive = (href) => pathname === href;
 
-    if (!matches) {
-      return currentHref;
-    }
-
-    return item.href.length > currentHref.length ? item.href : currentHref;
-  }, "");
+  const themeToggleButton = <ThemeToggleButton />;
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm dark:bg-slate-900">
-      <nav className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link
-          href="/"
-          className="text-base font-semibold text-gray-950 dark:text-gray-50"
-          onClick={() => setIsOpen(false)}
+    <nav className="relative flex items-center justify-between px-6 py-4 shadow">
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="rounded p-2 md:hidden"
+          aria-label="Toggle navigation menu"
         >
-          Next.js Project
-        </Link>
+          ☰
+        </button>
 
         <ul
-          id="site-navigation"
           className={clsx(
-            "absolute inset-x-0 top-full z-40 flex flex-col gap-2 border-y border-gray-200 bg-white p-4 shadow-md transition duration-200 dark:border-slate-700 dark:bg-slate-900",
-            "md:static md:z-auto md:flex md:w-auto md:flex-row md:items-center md:border-0 md:bg-transparent md:p-0 md:shadow-none",
-            isOpen
-              ? "visible translate-y-0 opacity-100"
-              : "invisible -translate-y-2 opacity-0 md:visible md:translate-y-0 md:opacity-100"
+            "absolute left-0 z-50 flex w-full flex-col gap-3 bg-white p-4 shadow-md transition-all duration-300 dark:bg-gray-900",
+            "md:static md:w-auto md:flex-row md:bg-transparent md:p-0 md:shadow-none",
+            isOpen ? "top-full" : "-top-96"
           )}
         >
-          {navItems.map((item) => (
-            <li key={item.href}>
+          {navItems.map((link) => (
+            <li key={link.href}>
               <Link
-                href={item.href}
-                onClick={() => setIsOpen(false)}
+                href={link.href}
                 className={clsx(
-                  "flex items-center rounded px-3 py-2 text-sm font-medium transition",
-                  activeHref === item.href
+                  "flex items-center justify-center rounded px-3 py-2 text-sm transition",
+                  isActive(link.href)
                     ? "bg-blue-600 text-white"
-                    : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-800"
+                    : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
                 )}
               >
-                {item.label}
+                {link.label}
               </Link>
             </li>
           ))}
         </ul>
+      </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded border border-gray-200 bg-gray-50 text-gray-900 transition hover:bg-gray-100 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-100 dark:hover:bg-slate-700"
-            aria-label="Toggle theme"
-            title="Toggle theme"
-          >
-            {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
-          </button>
+      <div className="flex items-center gap-3">
+        {themeToggleButton}
 
-          <button
-            type="button"
-            onClick={() => setIsOpen((current) => !current)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded border border-gray-200 bg-gray-50 text-gray-900 transition hover:bg-gray-100 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-100 dark:hover:bg-slate-700 md:hidden"
-            aria-label="Toggle navigation menu"
-            aria-expanded={isOpen}
-            aria-controls="site-navigation"
-            title="Toggle navigation menu"
-          >
-            {isOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-      </nav>
-    </header>
+        {session ? (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-700 dark:text-gray-200">
+              Hello, {session.user?.name || session.user?.email || "User"}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => signOut()}
+              className="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+            >
+              Logout
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+            >
+              Login
+            </Link>
+
+            <Link
+              href="/register"
+              className="rounded bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700"
+            >
+              Register
+            </Link>
+          </div>
+        )}
+      </div>
+    </nav>
   );
 }
