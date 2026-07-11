@@ -1,9 +1,7 @@
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import ThemeProvider from "@/context/ThemeContext";
-import ToasterClient from "@/components/ToasterClient";
-import AuthProvider from "@/components/AuthProvider";
+import Providers from "./providers";
 
 export const metadata = {
   title: "Next.js Project",
@@ -14,18 +12,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-gray-100 min-h-screen flex flex-col">
-        <ThemeProvider>
-          <AuthProvider>
-            <Navigation />
+        <Providers>
+          <Navigation />
 
-            <main className="flex-grow p-4">
-              {children}
-            </main>
+          <main className="flex-grow p-4">{children}</main>
 
-            <Footer />
-            <ToasterClient />
-          </AuthProvider>
-        </ThemeProvider>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );
