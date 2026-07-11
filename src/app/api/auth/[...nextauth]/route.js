@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
 
 import db from "@/lib/db-setup";
@@ -57,6 +58,10 @@ export const authOptions = {
         };
       },
     }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
   ],
 
   session: {
@@ -70,6 +75,43 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider !== "google") {
+        return true;
+      }
+
+      try {
+        const email = user.email?.trim();
+
+        if (!email) {
+          return false;
+        }
+
+        const existingUser = db
+          .prepare("SELECT id FROM users WHERE email = ?")
+          .get(email);
+
+        if (!existingUser) {
+          const name = user.name?.trim() || email.split("@")[0];
+
+          db.prepare(`
+            INSERT INTO users (
+              name,
+              email,
+              password,
+              email_verified,
+              is_admin
+            ) VALUES (?, ?, ?, ?, ?)
+          `).run(name, email, "", 1, 0);
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Google sign in error:", error);
+        return false;
+      }
+    },
+
     async jwt({ token, user }) {
       if (user) {
         const dbUser = db

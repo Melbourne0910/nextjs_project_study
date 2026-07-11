@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { registerUser } from "@/actions";
 import FormError from "@/components/FormError";
+import GoogleAuthButton from "@/components/ui/GoogleAuthButton";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { inputClasses } from "@/lib/styles";
 
@@ -116,6 +117,16 @@ export default function SignupPage() {
           Sign Up
         </SubmitButton>
       </form>
+
+      <div className="my-6 flex items-center" aria-hidden="true">
+        <div className="flex-1 border-t border-gray-300 dark:border-gray-700" />
+        <span className="px-4 text-sm text-gray-500 dark:text-gray-400">
+          or
+        </span>
+        <div className="flex-1 border-t border-gray-300 dark:border-gray-700" />
+      </div>
+
+      <GoogleAuthButton mode="signup" />
     </div>
   );
 }
