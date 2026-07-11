@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
 
@@ -62,6 +63,10 @@ export const authOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID,
+      clientSecret: process.env.GITHUB_SECRET,
+    }),
   ],
 
   session: {
@@ -76,7 +81,7 @@ export const authOptions = {
 
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider !== "google") {
+      if (!["google", "github"].includes(account?.provider)) {
         return true;
       }
 
@@ -107,7 +112,7 @@ export const authOptions = {
 
         return true;
       } catch (error) {
-        console.error("Google sign in error:", error);
+        console.error("OAuth sign in error:", error);
         return false;
       }
     },

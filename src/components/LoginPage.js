@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import FormError from "@/components/FormError";
+import GitHubAuthButton from "@/components/ui/GitHubAuthButton";
 import GoogleAuthButton from "@/components/ui/GoogleAuthButton";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { inputClasses } from "@/lib/styles";
@@ -94,7 +95,10 @@ export default function LoginPage() {
           <div className="flex-1 border-t border-gray-300 dark:border-gray-700" />
         </div>
 
-        <GoogleAuthButton />
+        <div className="space-y-3">
+          <GoogleAuthButton />
+          <GitHubAuthButton />
+        </div>
 
         <p className="mt-4 text-center text-sm">
           <Link

@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { registerUser } from "@/actions";
 import FormError from "@/components/FormError";
+import GitHubAuthButton from "@/components/ui/GitHubAuthButton";
 import GoogleAuthButton from "@/components/ui/GoogleAuthButton";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { inputClasses } from "@/lib/styles";
@@ -126,7 +127,10 @@ export default function SignupPage() {
         <div className="flex-1 border-t border-gray-300 dark:border-gray-700" />
       </div>
 
-      <GoogleAuthButton mode="signup" />
+      <div className="space-y-3">
+        <GoogleAuthButton mode="signup" />
+        <GitHubAuthButton mode="signup" />
+      </div>
     </div>
   );
 }
