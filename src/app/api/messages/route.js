@@ -8,10 +8,12 @@ export async function GET() {
         SELECT
           messages.id,
           messages.text,
-          messages.createdAt,
+          messages.course_id AS courseId,
+          messages.created_at AS createdAt,
+          messages.edited_at AS editedAt,
           users.name AS username
         FROM messages
-        JOIN users ON messages.userId = users.id
+        JOIN users ON messages.user_id = users.id
         ORDER BY messages.id ASC
       `)
       .all();
@@ -29,7 +31,7 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const { text } = await request.json();
+    const { text, courseId } = await request.json();
 
     if (!text?.trim()) {
       return Response.json(
@@ -53,19 +55,35 @@ export async function POST(request) {
     const randomUserId =
       userIds[Math.floor(Math.random() * userIds.length)];
 
+    const course = courseId
+      ? db.prepare("SELECT id FROM courses WHERE id = ?").get(courseId)
+      : db.prepare("SELECT id FROM courses ORDER BY id ASC LIMIT 1").get();
+
+    if (!course) {
+      return Response.json(
+        { success: false, error: "A valid course is required" },
+        { status: 400 }
+      );
+    }
+
     const result = db
-      .prepare("INSERT INTO messages (userId, text) VALUES (?, ?)")
-      .run(randomUserId, text.trim());
+      .prepare(`
+        INSERT INTO messages (user_id, course_id, text)
+        VALUES (?, ?, ?)
+      `)
+      .run(randomUserId, course.id, text.trim());
 
     const message = db
       .prepare(`
         SELECT
           m.id,
           m.text,
-          m.createdAt,
+          m.course_id AS courseId,
+          m.created_at AS createdAt,
+          m.edited_at AS editedAt,
           u.name AS username
         FROM messages m
-        LEFT JOIN users u ON m.userId = u.id
+        LEFT JOIN users u ON m.user_id = u.id
         WHERE m.id = ?
       `)
       .get(result.lastInsertRowid);

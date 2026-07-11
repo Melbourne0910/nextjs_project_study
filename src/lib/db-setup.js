@@ -3,6 +3,7 @@ import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
 import { courses } from "@/data/courses";
+import { shuffledMessages } from "@/data/messages";
 import { users } from "@/data/users";
 
 const dbPath = path.join(process.cwd(), "src/data/app.db");
@@ -14,9 +15,12 @@ const loadSQL = (relativePath) => {
 };
 
 const db = new Database(dbPath);
+db.pragma("foreign_keys = ON");
 
 // const dropTablesSQL = loadSQL("schema/drop-tables.sql");
 const createTablesSQL = loadSQL("schema/create-tables.sql");
+const createMessagesTableSQL = loadSQL("schema/table.sql");
+const insertMessagesSQL = loadSQL("seed/insert_messages.sql");
 const insertUserSQL = loadSQL("seed/insert-users.sql");
 
 // db.exec(dropTablesSQL);
@@ -102,6 +106,68 @@ if (userCount === 0) {
   seedUsers(users);
 
   console.log("Users seeded successfully");
+}
+
+const messageColumns = new Set(
+  db.prepare("PRAGMA table_info(messages)")
+    .all()
+    .map((column) => column.name)
+);
+
+if (messageColumns.has("userId")) {
+  const defaultCourse = db
+    .prepare("SELECT id FROM courses ORDER BY id ASC LIMIT 1")
+    .get();
+
+  if (!defaultCourse) {
+    throw new Error("A course is required to migrate existing messages");
+  }
+
+  const migrateMessages = db.transaction(() => {
+    db.exec("ALTER TABLE messages RENAME TO messages_legacy");
+    db.exec(createMessagesTableSQL);
+    db.prepare(`
+      INSERT INTO messages (
+        id,
+        user_id,
+        course_id,
+        text,
+        created_at
+      )
+      SELECT
+        id,
+        userId,
+        ?,
+        text,
+        createdAt
+      FROM messages_legacy
+    `).run(defaultCourse.id);
+    db.exec("DROP TABLE messages_legacy");
+  });
+
+  migrateMessages();
+  console.log("Messages table migrated successfully");
+}
+
+const { count: messageCount } = db
+  .prepare("SELECT COUNT(*) as count FROM messages")
+  .get();
+
+if (messageCount === 0) {
+  const insertMessage = db.prepare(insertMessagesSQL);
+
+  const seedMessages = db.transaction((messageList) => {
+    for (const message of messageList) {
+      insertMessage.run(
+        message.user_id,
+        message.course_id,
+        message.text
+      );
+    }
+  });
+
+  seedMessages(shuffledMessages);
+  console.log("Messages seeded successfully");
 }
 
 export default db;
