@@ -1,104 +1,51 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
-import toast from "react-hot-toast";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-export default function ChatPage() {
+import CourseCard from "@/components/CourseCard";
+import FormError from "@/components/FormError";
+import SubmitButton from "@/components/ui/SubmitButton";
+import { inputClasses } from "@/lib/styles";
+
+const messageSchema = z.object({
+  text: z
+    .string()
+    .trim()
+    .min(1, "Message is required")
+    .max(500, "Message must be less than 500 characters"),
+});
+
+export default function ChatPage({ course }) {
   const { status } = useSession();
-  const [messages, setMessages] = useState([]);
-  const [newMsg, setNewMsg] = useState("");
-  const [loading, setLoading] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(messageSchema),
+    defaultValues: {
+      text: "",
+    },
+  });
 
-  useEffect(() => {
-    if (status !== "authenticated") {
-      return;
-    }
-
-    async function fetchMessages() {
-      try {
-        const res = await fetch("/api/messages", { cache: "no-store" });
-        const data = await res.json();
-        setMessages(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Failed to fetch messages:", error);
-      }
-    }
-
-    fetchMessages();
-  }, [status]);
-
-  useEffect(() => {
-    if (status !== "authenticated") {
-      return;
-    }
-
-    const eventSource = new EventSource("/api/messages/stream");
-
-    eventSource.onmessage = (event) => {
-      const newMessage = JSON.parse(event.data);
-
-      if (newMessage.type === "connected") {
-        toast.success("Realtime connection established");
-      } else {
-        setMessages((prev) => {
-          if (prev.some((message) => message.id === newMessage.id)) {
-            return prev;
-          }
-
-          return [...prev, newMessage];
-        });
-      }
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [status]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!newMsg.trim()) return;
-
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: newMsg }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setNewMsg("");
-      } else {
-        alert("Failed to save message.");
-      }
-    } catch (error) {
-      console.error("Failed to submit message:", error);
-    } finally {
-      setLoading(false);
-    }
+  const onSubmit = async (values) => {
+    console.log(values);
+    reset();
   };
 
   if (status === "loading") {
-    return (
-      <p className="p-6 text-center">
-        Loading session...
-      </p>
-    );
+    return <p className="p-6 text-center">Loading session...</p>;
   }
 
   if (status === "unauthenticated") {
     return (
       <div className="mx-auto mt-20 max-w-md text-center">
         <p className="mb-4 text-lg">
-          You must be logged in to view messages.
+          You must be logged in to access the chat room.
         </p>
 
         <button
@@ -113,47 +60,48 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">💬 Messages</h1>
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <h1 className="mb-6 text-3xl font-bold">Chat Room</h1>
 
-      <ul className="space-y-2 mb-6">
-        {messages.map((msg) => (
-          <li
-            key={msg.id}
-            className="p-3 border rounded bg-white dark:bg-gray-800"
+      <div className="flex flex-col gap-8 lg:flex-row">
+        <div className="lg:w-2/5 xl:w-1/3">
+          <CourseCard course={course} />
+        </div>
+
+        <section className="flex-1" aria-labelledby="message-form-title">
+          <h2 id="message-form-title" className="text-xl font-semibold">
+            Join the discussion
+          </h2>
+
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="mt-6 flex flex-col gap-4"
           >
-            <p className="font-bold">
-              {msg.username || "Anonymous"}
-            </p>
+            <div>
+              <input
+                type="text"
+                placeholder="Type your message..."
+                disabled={isSubmitting}
+                aria-invalid={Boolean(errors.text)}
+                aria-describedby={errors.text ? "message-error" : undefined}
+                className={inputClasses}
+                {...register("text")}
+              />
 
-            <p>{msg.text}</p>
+              <div id="message-error">
+                <FormError>{errors.text?.message}</FormError>
+              </div>
+            </div>
 
-            <span className="text-xs text-gray-500">
-              {msg.createdAt}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
-          type="text"
-          value={newMsg}
-          onChange={(e) => setNewMsg(e.target.value)}
-          placeholder="Type a message..."
-          required
-          disabled={loading}
-          className="border p-2 flex-1 rounded"
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 rounded text-white bg-blue-600"
-        >
-          {loading ? "Sending..." : "Send"}
-        </button>
-      </form>
+            <SubmitButton
+              isLoading={isSubmitting}
+              loadingText="Sending..."
+            >
+              Send
+            </SubmitButton>
+          </form>
+        </section>
+      </div>
     </div>
   );
 }

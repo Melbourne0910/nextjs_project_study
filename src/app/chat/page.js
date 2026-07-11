@@ -1,4 +1,5 @@
 import ChatPage from "./ChatPage";
+import { courses } from "@/data/courses";
 
 export const metadata = {
   title: "Chat | Agora",
@@ -6,5 +7,5 @@ export const metadata = {
 };
 
 export default function Page() {
-  return <ChatPage />;
+  return <ChatPage course={courses[0]} />;
 }
