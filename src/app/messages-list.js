@@ -1,21 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { formatDistanceToNow } from "date-fns";
 import { ChevronUp } from "lucide-react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
 import { getMessages } from "@/app/actions";
+import MessageItem from "@/app/chat/MessageItem";
 
 const PAGE_SIZE = 10;
 
-function toUtcDate(createdAt) {
-  return new Date(`${createdAt.replace(" ", "T")}Z`);
-}
-
 export default function MessagesList({ courseId }) {
-  const { status: sessionStatus } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [offset, setOffset] = useState(0);
@@ -108,6 +104,13 @@ export default function MessagesList({ courseId }) {
                 : [...currentMessages, payload.data];
             });
             break;
+          case "delete":
+            setMessages((currentMessages) =>
+              currentMessages.filter(
+                (message) => message.id !== payload.data
+              )
+            );
+            break;
           default:
             console.warn("Unknown payload type:", payload.type);
         }
@@ -134,6 +137,48 @@ export default function MessagesList({ courseId }) {
 
     setOffset(newOffset);
     await fetchMessages(newOffset);
+  }
+
+  async function handleDelete(id) {
+    const deletedIndex = messages.findIndex((message) => message.id === id);
+    const deletedMessage = messages[deletedIndex];
+
+    setMessages((currentMessages) =>
+      currentMessages.filter((message) => message.id !== id)
+    );
+
+    try {
+      const response = await fetch("/api/messages", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete message");
+      }
+
+      toast.success("Message deleted");
+    } catch (error) {
+      if (deletedMessage) {
+        setMessages((currentMessages) => {
+          if (currentMessages.some((message) => message.id === id)) {
+            return currentMessages;
+          }
+
+          const restoredMessages = [...currentMessages];
+          const restoreIndex = Math.min(deletedIndex, restoredMessages.length);
+          restoredMessages.splice(restoreIndex, 0, deletedMessage);
+          return restoredMessages;
+        });
+      }
+
+      console.error("Failed to delete message:", error);
+      toast.error("Failed to delete message");
+    }
   }
 
   if (loading && messages.length === 0) {
@@ -172,28 +217,14 @@ export default function MessagesList({ courseId }) {
       )}
 
       <ul className="space-y-3">
-        {messages.map((message) => {
-          const createdAt = toUtcDate(message.created_at);
-
-          return (
-            <li
-              key={message.id}
-              className="rounded border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <strong>{message.username || "Anonymous"}</strong>
-                <time
-                  dateTime={createdAt.toISOString()}
-                  className="text-xs text-gray-500 dark:text-gray-400"
-                >
-                  {formatDistanceToNow(createdAt, { addSuffix: true })}
-                </time>
-              </div>
-
-              <p className="mt-2 break-words">{message.text}</p>
-            </li>
-          );
-        })}
+        {messages.map((message) => (
+          <MessageItem
+            key={message.id}
+            message={message}
+            session={session}
+            onDelete={handleDelete}
+          />
+        ))}
       </ul>
 
       <div ref={bottomRef} />

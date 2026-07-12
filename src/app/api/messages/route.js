@@ -65,6 +65,7 @@ export async function POST(request) {
       .prepare(`
         SELECT
           m.id,
+          m.user_id,
           m.text,
           m.course_id,
           m.created_at,
@@ -88,6 +89,59 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error("Failed to post message:", error);
+
+    return Response.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return Response.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await request.json();
+    const parsedId = Number(id);
+
+    if (!Number.isInteger(parsedId) || parsedId <= 0) {
+      return Response.json(
+        { success: false, error: "Message ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const message = db
+      .prepare("SELECT user_id FROM messages WHERE id = ?")
+      .get(parsedId);
+
+    if (!message || message.user_id !== session.user.id) {
+      return Response.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
+    db.prepare("DELETE FROM messages WHERE id = ?").run(parsedId);
+
+    broadcastMessage({
+      type: "delete",
+      data: parsedId,
+    });
+
+    return Response.json({
+      success: true,
+      message: "Message deleted successfully",
+    });
+  } catch (error) {
+    console.error("Failed to delete message:", error);
 
     return Response.json(
       { success: false, error: "Internal server error" },

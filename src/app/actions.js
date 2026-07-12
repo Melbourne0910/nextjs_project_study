@@ -30,8 +30,10 @@ export async function getMessages(courseId, limit = 10, offset = 0) {
       .prepare(`
         SELECT
           messages.id,
+          messages.user_id,
           messages.text,
           messages.created_at,
+          messages.edited_at,
           users.name AS username
         FROM messages
         LEFT JOIN users ON messages.user_id = users.id
