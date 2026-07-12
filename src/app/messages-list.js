@@ -111,6 +111,13 @@ export default function MessagesList({ courseId }) {
               )
             );
             break;
+          case "edit":
+            setMessages((currentMessages) =>
+              currentMessages.map((message) =>
+                message.id === payload.data?.id ? payload.data : message
+              )
+            );
+            break;
           default:
             console.warn("Unknown payload type:", payload.type);
         }
@@ -181,6 +188,60 @@ export default function MessagesList({ courseId }) {
     }
   }
 
+  async function handleEdit(id, newText) {
+    const trimmedText = newText.trim();
+    const previousMessage = messages.find((message) => message.id === id);
+
+    if (!trimmedText || trimmedText.length > 500 || !previousMessage) {
+      return;
+    }
+
+    setMessages((currentMessages) =>
+      currentMessages.map((message) =>
+        message.id === id
+          ? {
+              ...message,
+              text: trimmedText,
+              edited_at: new Date().toISOString(),
+            }
+          : message
+      )
+    );
+
+    try {
+      const response = await fetch("/api/messages", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          newText: trimmedText,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to edit message");
+      }
+
+      setMessages((currentMessages) =>
+        currentMessages.map((message) =>
+          message.id === id ? data.data : message
+        )
+      );
+      toast.success("Message updated");
+    } catch (error) {
+      setMessages((currentMessages) =>
+        currentMessages.map((message) =>
+          message.id === id ? previousMessage : message
+        )
+      );
+      console.error("Failed to edit message:", error);
+      toast.error(error.message || "Failed to edit message");
+    }
+  }
+
   if (loading && messages.length === 0) {
     return (
       <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -223,6 +284,7 @@ export default function MessagesList({ courseId }) {
             message={message}
             session={session}
             onDelete={handleDelete}
+            onEdit={handleEdit}
           />
         ))}
       </ul>

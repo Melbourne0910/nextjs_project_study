@@ -149,3 +149,88 @@ export async function DELETE(request) {
     );
   }
 }
+
+export async function PUT(request) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return Response.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const { id, newText } = await request.json();
+    const parsedId = Number(id);
+    const trimmedText = typeof newText === "string" ? newText.trim() : "";
+
+    if (!Number.isInteger(parsedId) || parsedId <= 0 || !trimmedText) {
+      return Response.json(
+        { success: false, error: "Invalid data" },
+        { status: 400 }
+      );
+    }
+
+    if (trimmedText.length > 500) {
+      return Response.json(
+        {
+          success: false,
+          error: "Message must be less than 500 characters",
+        },
+        { status: 400 }
+      );
+    }
+
+    const message = db
+      .prepare("SELECT user_id FROM messages WHERE id = ?")
+      .get(parsedId);
+
+    if (!message || message.user_id !== session.user.id) {
+      return Response.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
+    db.prepare(`
+      UPDATE messages
+      SET text = ?, edited_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(trimmedText, parsedId);
+
+    const updatedMessage = db
+      .prepare(`
+        SELECT
+          m.id,
+          m.user_id,
+          m.text,
+          m.course_id,
+          m.created_at,
+          m.edited_at,
+          u.name AS username
+        FROM messages m
+        LEFT JOIN users u ON m.user_id = u.id
+        WHERE m.id = ?
+      `)
+      .get(parsedId);
+
+    broadcastMessage({
+      type: "edit",
+      data: updatedMessage,
+    });
+
+    return Response.json({
+      success: true,
+      message: "Message updated successfully",
+      data: updatedMessage,
+    });
+  } catch (error) {
+    console.error("Failed to edit message:", error);
+
+    return Response.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
