@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { getCourses } from "@/app/actions";
 import CourseCard from "@/components/CourseCard";
 import FormError from "@/components/FormError";
 import SubmitButton from "@/components/ui/SubmitButton";
@@ -18,8 +20,10 @@ const messageSchema = z.object({
     .max(500, "Message must be less than 500 characters"),
 });
 
-export default function ChatPage({ course }) {
+export default function ChatPage() {
   const { status } = useSession();
+  const [courses, setCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(null);
   const {
     register,
     handleSubmit,
@@ -32,10 +36,45 @@ export default function ChatPage({ course }) {
     },
   });
 
+  useEffect(() => {
+    if (status !== "authenticated") {
+      return;
+    }
+
+    async function loadCourses() {
+      try {
+        const data = await getCourses();
+
+        setCourses(data);
+        setSelectedCourse((currentCourseId) => {
+          const currentCourseStillExists = data.some(
+            (course) => course.id === currentCourseId
+          );
+
+          return currentCourseStillExists
+            ? currentCourseId
+            : data[0]?.id ?? null;
+        });
+
+        if (data.length === 0) {
+          console.warn("No courses found.");
+        }
+      } catch (error) {
+        console.error("Failed to fetch courses:", error);
+      }
+    }
+
+    loadCourses();
+  }, [status]);
+
   const onSubmit = async (values) => {
     console.log(values);
     reset();
   };
+
+  const selectedCourseData = courses.find(
+    (course) => course.id === selectedCourse
+  );
 
   if (status === "loading") {
     return <p className="p-6 text-center">Loading session...</p>;
@@ -63,10 +102,42 @@ export default function ChatPage({ course }) {
     <div className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="mb-6 text-3xl font-bold">Chat Room</h1>
 
-      <div className="flex flex-col gap-8 lg:flex-row">
-        <div className="lg:w-2/5 xl:w-1/3">
-          <CourseCard course={course} />
-        </div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_2fr]">
+        <aside>
+          {selectedCourseData && (
+            <div className="lg:sticky lg:top-8">
+              <CourseCard
+                course={selectedCourseData}
+                showDescription={false}
+                showViewDetailsButton={false}
+              />
+
+              <div className="mt-4">
+                <label
+                  htmlFor="course-select"
+                  className="mb-2 block font-medium"
+                >
+                  Select Course
+                </label>
+
+                <select
+                  id="course-select"
+                  value={selectedCourse}
+                  onChange={(event) =>
+                    setSelectedCourse(Number(event.target.value))
+                  }
+                  className={inputClasses}
+                >
+                  {courses.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+        </aside>
 
         <section className="flex-1" aria-labelledby="message-form-title">
           <h2 id="message-form-title" className="text-xl font-semibold">
