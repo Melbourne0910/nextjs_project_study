@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { getCourses } from "@/app/actions";
+import MessagesList from "@/app/messages-list";
 import CourseCard from "@/components/CourseCard";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import FormError from "@/components/FormError";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { inputClasses } from "@/lib/styles";
@@ -140,6 +142,24 @@ export default function ChatPage() {
         </aside>
 
         <section className="flex-1" aria-labelledby="message-form-title">
+          {selectedCourse ? (
+            <ErrorBoundary key={selectedCourse}>
+              <Suspense
+                fallback={
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Loading messages...
+                  </p>
+                }
+              >
+                <MessagesList courseId={selectedCourse} />
+              </Suspense>
+            </ErrorBoundary>
+          ) : (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Loading courses...
+            </p>
+          )}
+
           <h2 id="message-form-title" className="text-xl font-semibold">
             Join the discussion
           </h2>
