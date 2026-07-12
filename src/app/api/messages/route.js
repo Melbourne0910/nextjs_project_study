@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import db from "@/lib/db-setup";
+import { broadcastMessage } from "@/app/api/messages/stream/route";
 
 export async function POST(request) {
   try {
@@ -65,15 +66,20 @@ export async function POST(request) {
         SELECT
           m.id,
           m.text,
-          m.course_id AS courseId,
-          m.created_at AS createdAt,
-          m.edited_at AS editedAt,
+          m.course_id,
+          m.created_at,
+          m.edited_at,
           u.name AS username
         FROM messages m
         LEFT JOIN users u ON m.user_id = u.id
         WHERE m.id = ?
       `)
       .get(result.lastInsertRowid);
+
+    broadcastMessage({
+      type: "new",
+      data: message,
+    });
 
     return Response.json({
       success: true,

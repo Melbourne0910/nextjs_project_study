@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { ChevronUp } from "lucide-react";
+import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
 
 import { getMessages } from "@/app/actions";
 
@@ -13,6 +15,7 @@ function toUtcDate(createdAt) {
 }
 
 export default function MessagesList({ courseId }) {
+  const { status: sessionStatus } = useSession();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [offset, setOffset] = useState(0);
@@ -73,6 +76,54 @@ export default function MessagesList({ courseId }) {
       shouldScrollToBottomRef.current = false;
     }
   }, [loading, messages]);
+
+  useEffect(() => {
+    if (sessionStatus !== "authenticated") {
+      return;
+    }
+
+    const eventSource = new EventSource("/api/messages/stream");
+
+    eventSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+
+        switch (payload.type) {
+          case "connected":
+            toast.success("Connected to live chat");
+            break;
+          case "new":
+            if (payload.data?.course_id !== courseId) {
+              return;
+            }
+
+            shouldScrollToBottomRef.current = true;
+            setMessages((currentMessages) => {
+              const alreadyExists = currentMessages.some(
+                (message) => message.id === payload.data.id
+              );
+
+              return alreadyExists
+                ? currentMessages
+                : [...currentMessages, payload.data];
+            });
+            break;
+          default:
+            console.warn("Unknown payload type:", payload.type);
+        }
+      } catch (error) {
+        console.error("Failed to parse live message:", error);
+      }
+    };
+
+    eventSource.onerror = () => {
+      console.error("Live chat connection lost. Reconnecting...");
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [courseId, sessionStatus]);
 
   async function loadMore() {
     if (loading || !hasMore) {
