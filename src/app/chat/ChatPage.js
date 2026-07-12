@@ -160,7 +160,10 @@ export default function ChatPage() {
             </p>
           )}
 
-          <h2 id="message-form-title" className="text-xl font-semibold">
+          <h2
+            id="message-form-title"
+            className="mt-6 text-xl font-semibold"
+          >
             Join the discussion
           </h2>
 
