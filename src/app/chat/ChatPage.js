@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -26,6 +26,7 @@ export default function ChatPage() {
   const { status } = useSession();
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const inputRef = useRef(null);
   const {
     register,
     handleSubmit,
@@ -37,6 +38,7 @@ export default function ChatPage() {
       text: "",
     },
   });
+  const { ref: textInputRef, ...textField } = register("text");
 
   useEffect(() => {
     if (status !== "authenticated") {
@@ -70,8 +72,29 @@ export default function ChatPage() {
   }, [status]);
 
   const onSubmit = async (values) => {
-    console.log(values);
-    reset();
+    try {
+      const response = await fetch("/api/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: values.text,
+          courseId: selectedCourse,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        console.error(data.error || "Failed to send message");
+        return;
+      }
+
+      reset();
+      setTimeout(() => inputRef.current?.focus(), 500);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
   };
 
   const selectedCourseData = courses.find(
@@ -168,6 +191,8 @@ export default function ChatPage() {
           </h2>
 
           <form
+            // The submit callback reads the ref only after the request completes.
+            // eslint-disable-next-line react-hooks/refs
             onSubmit={handleSubmit(onSubmit)}
             className="mt-6 flex flex-col gap-4"
           >
@@ -179,7 +204,11 @@ export default function ChatPage() {
                 aria-invalid={Boolean(errors.text)}
                 aria-describedby={errors.text ? "message-error" : undefined}
                 className={inputClasses}
-                {...register("text")}
+                {...textField}
+                ref={(element) => {
+                  textInputRef(element);
+                  inputRef.current = element;
+                }}
               />
 
               <div id="message-error">
